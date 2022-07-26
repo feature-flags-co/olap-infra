@@ -1,0 +1,94 @@
+version: "3.9"
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    restart: on-failure
+    ports:
+      - '2181:2181'
+    volumes:
+      - ~/zookeeper:/bitnami/zookeeper
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: 'true'
+    networks:
+      - clickhouse-network
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    restart: on-failure
+    depends_on:
+      - zookeeper
+    ports:
+      - '9092:9092'
+      - '29092:29092'
+    environment:
+      KAFKA_BROKER_ID: 1001
+      KAFKA_CFG_RESERVED_BROKER_MAX_ID: 1001
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: 'true'
+    networks:
+      - clickhouse-network
+    volumes:
+      - ~/kafka:/bitnami/kafka
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    networks:
+      - clickhouse-network
+
+  clickhouse-server:
+    image: yandex/clickhouse-server
+    container_name: clickhouse-server
+    restart: on-failure
+    depends_on:
+      - zookeeper
+      - kafka
+
+    ports:
+      - "8123:8123"
+      - "8443:8443"
+      - "9000:9000"
+      - "9009:9009"
+      - "9440:9440"
+    networks:
+      - clickhouse-network
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 262144
+        hard: 262144
+    volumes:
+      - ./docker/clickhouse/single_node/config.xml:/etc/clickhouse-server/config.xml
+      - ./docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
+      - ~/clickhouse-server:/var/lib/clickhouse
+
+  clickhouse-client:
+    image: yandex/clickhouse-client
+    container_name: clickhouse-client
+    restart: on-failure
+    entrypoint:
+      - /bin/sleep
+    command:
+      - infinity
+    networks:
+      - clickhouse-network
+
+networks:
+  clickhouse-network:
+    name: clickhouse-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.1.0.0/16
