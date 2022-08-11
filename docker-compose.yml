@@ -7,7 +7,7 @@ services:
     ports:
       - '2181:2181'
     volumes:
-      - ~/zookeeper:/bitnami/zookeeper
+      - zookeeper:/bitnami/zookeeper
     environment:
       ALLOW_ANONYMOUS_LOGIN: 'true'
     networks:
@@ -22,18 +22,14 @@ services:
     ports:
       - '9092:9092'
       - '29092:29092'
+    env_file:
+      - docker/kafka/.env
     environment:
-      KAFKA_BROKER_ID: 1001
-      KAFKA_CFG_RESERVED_BROKER_MAX_ID: 1001
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      ALLOW_PLAINTEXT_LISTENER: 'true'
+      KAFKA_CFG_ADVERTISED_LISTENERS:
     networks:
       - clickhouse-network
     volumes:
-      - ~/kafka:/bitnami/kafka
+      - kafka:/bitnami/kafka
 
   kafka-ui:
     image: provectuslabs/kafka-ui
@@ -41,10 +37,8 @@ services:
     ports:
       - "8080:8080"
     restart: on-failure
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    env_file:
+      - docker/kafka/kafka-ui.env
     networks:
       - clickhouse-network
 
@@ -72,7 +66,7 @@ services:
     volumes:
       - ./docker/clickhouse/single_node/config.xml:/etc/clickhouse-server/config.xml
       - ./docker/clickhouse/users.xml:/etc/clickhouse-server/users.xml
-      - ~/clickhouse-server:/var/lib/clickhouse
+      - clickhouse-server:/var/lib/clickhouse
 
   clickhouse-client:
     image: yandex/clickhouse-client
@@ -92,3 +86,10 @@ networks:
     ipam:
       config:
         - subnet: 172.1.0.0/16
+
+volumes:
+  kafka:
+  clickhouse-server:
+  zookeeper:
+
+
