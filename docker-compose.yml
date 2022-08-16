@@ -24,8 +24,6 @@ services:
       - '29092:29092'
     env_file:
       - docker/kafka/.env
-    environment:
-      KAFKA_CFG_ADVERTISED_LISTENERS:
     networks:
       - clickhouse-network
     volumes:
