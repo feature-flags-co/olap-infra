@@ -77,6 +77,40 @@ services:
     networks:
       - clickhouse-network
 
+  elasticsearch:
+    image: elasticsearch:8.2.2
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - network.host=0.0.0.0
+    volumes:
+      - es:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - clickhouse-network
+
+  redis:
+    image: bitnami/redis:6.2.10
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis:/data
+    networks:
+      - clickhouse-network
+
+  mongodb:
+    image: mongo:5.0.14
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb:/data/db
+    networks:
+      - clickhouse-network
+
 networks:
   clickhouse-network:
     name: clickhouse-network
@@ -89,5 +123,8 @@ volumes:
   kafka:
   clickhouse-server:
   zookeeper:
+  es:
+  redis:
+  mongodb:
 
 
