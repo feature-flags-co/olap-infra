@@ -81,8 +81,8 @@ services:
     image: elasticsearch:8.2.2
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
       - network.host=0.0.0.0
+      - ELASTIC_PASSWORD=
     volumes:
       - es:/usr/share/elasticsearch/data
     ports:
@@ -96,7 +96,7 @@ services:
     ports:
       - "6379:6379"
     environment:
-      - ALLOW_EMPTY_PASSWORD=yes
+      - REDIS_PASSWORD=
     volumes:
       - redis:/data
     networks:
@@ -106,6 +106,9 @@ services:
     image: mongo:5.0.14
     ports:
       - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=
+      - MONGO_INITDB_ROOT_PASSWORD=
     volumes:
       - mongodb:/data/db
     networks:
